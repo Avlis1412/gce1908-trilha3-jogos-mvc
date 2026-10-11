@@ -18,18 +18,6 @@ Evoluir a API do Trabalho 2 (Prisma + Repositories) para uma arquitetura **MVC e
 
 ---
 
-## Documentação Arquitetural
-
-Além deste README, o repositório contém:
-
-| Arquivo | Conteúdo |
-|---|---|
-| [`ARQUITETURA.md`](./ARQUITETURA.md) | Diagrama das camadas, responsabilidades, fluxo completo de requisição e justificativa dos padrões de projeto |
-| [`docs/adr/001-adocao-do-prisma-como-orm.md`](./docs/adr/001-adocao-do-prisma-como-orm.md) | ADR sobre a escolha do Prisma como ORM |
-| [`docs/adr/002-arquitetura-em-camadas-com-mvc.md`](./docs/adr/002-arquitetura-em-camadas-com-mvc.md) | ADR sobre a adoção da arquitetura em camadas com MVC |
-
----
-
 ## Estrutura do Projeto
 
 ```text
@@ -38,14 +26,12 @@ gce1908-trilha3-jogos-mvc/
 │   ├── schema.sql
 │   ├── seed.sql
 │   └── queries.sql
-├── docs/
-│   └── adr/                      # Architecture Decision Records
-│       ├── 001-adocao-do-prisma-como-orm.md
-│       └── 002-arquitetura-em-camadas-com-mvc.md
 ├── prisma/
 │   ├── migrations/               # Migrations versionadas
+│   │   ├── ..._initial_schema/
+│   │   └── ..._add_desconto_jogo/
 │   ├── schema.prisma             # Fonte da verdade do modelo
-│   └── seed.js                   # Seed reprodutível
+│   └── seed.js                   # Seed com 10+ registros por tabela
 ├── src/
 │   ├── config/
 │   │   └── prisma.js             # Cliente Prisma (Singleton)
@@ -86,16 +72,12 @@ gce1908-trilha3-jogos-mvc/
 │   │   └── avaliacoesService.js
 │   ├── utils/
 │   │   ├── constants.js          # HTTP, mensagens, regras
-│   │   ├── formatters.js         # Formatadores reutilizáveis
 │   │   └── validators.js         # Validações reutilizáveis
 │   ├── app.js                    # Configuração do Express
 │   └── server.js                 # Ponto de entrada
 ├── docker-compose.yml            # Bônus: banco em container
 ├── .env.example
-├── .eslintrc.json
-├── .eslintignore
 ├── .gitignore
-├── ARQUITETURA.md
 ├── package.json
 └── README.md
 ```
@@ -137,8 +119,6 @@ PostgreSQL
 | **services** | Validar, orquestrar, decidir | Conhecer `req`/`res` |
 | **repositories** | Executar queries Prisma | Conter regras de negócio |
 | **DTOs** | Padronizar formato de entrada/saída | Executar queries |
-
-> Para o fluxo completo de uma requisição e a justificativa detalhada de cada padrão, consulte o [`ARQUITETURA.md`](./ARQUITETURA.md).
 
 ---
 
@@ -302,13 +282,6 @@ Saída esperada:
 ===============================================================
 ```
 
-### 7. Qualidade de código (ESLint)
-
-```bash
-npm run lint          # verifica
-npm run lint:fix      # corrige automaticamente
-```
-
 ---
 
 ## Alternativa com Docker (bônus)
@@ -385,17 +358,17 @@ Se o usuário já avaliou o jogo, a avaliação é atualizada em vez de duplicad
 
 ## Padrões de Projeto Aplicados
 
-| Padrão | Onde está | Problema que resolve |
+| Padrão | Onde está | Para quê |
 |---|---|---|
-| **MVC** | Arquitetura geral | Separa a tradução HTTP do domínio |
-| **Repository** | `src/repositories/` | Isola o acesso ao Prisma do resto da aplicação |
-| **Service Layer** | `src/services/` | Concentra regras de negócio fora do controller |
-| **DTO** | `src/models/dto/` | Desacopla formato de entrada/saída das entidades |
-| **Factory** | `src/factories/ServiceFactory.js` | Centraliza a criação de services com suas dependências |
-| **Dependency Injection** | Constructors dos services | Facilita testes (repositórios podem ser substituídos) |
-| **Singleton** | `src/config/prisma.js` | Uma única instância do PrismaClient (evita múltiplas conexões) |
-| **Soft Delete** | `deletedAt` em todos os models | Preserva histórico de dados |
-| **Middleware Chain** | `src/middlewares/errorHandler.js` | Tratamento centralizado de erros |
+| MVC | Arquitetura geral | Separar responsabilidades |
+| Repository | `src/repositories/` | Isolar acesso a dados |
+| Service Layer | `src/services/` | Concentrar regras de negócio |
+| DTO | `src/models/dto/` | Padronizar formato de entrada/saída |
+| Factory | `src/factories/ServiceFactory.js` | Centralizar criação de services |
+| Dependency Injection | Constructors dos services | Facilitar testes |
+| Singleton | `src/config/prisma.js` | Uma única conexão |
+| Soft Delete | `deletedAt` em todos os models | Preservar histórico |
+| Error Handler centralizado | `src/middlewares/errorHandler.js` | Respostas consistentes |
 
 ---
 
@@ -428,13 +401,6 @@ Se o usuário já avaliou o jogo, a avaliação é atualizada em vez de duplicad
 - Middleware de erro centralizado
 - AppError e subclasses para erros de negócio
 - DTOs isolam o formato do banco do formato da API
-
-### Qualidade de Código
-
-- ESLint configurado (`.eslintrc.json`)
-- Ausência de dependências circulares
-- Nenhum acesso direto ao Prisma fora da camada de persistência
-- Nenhuma regra de negócio dentro dos controllers
 
 ### Auditoria
 
@@ -482,7 +448,6 @@ Retorno: `{"status":"error","tipo":"NotFoundError","message":"Jogo não encontra
 | ORM | Prisma 6.19.3 |
 | Runtime | Node.js 18+ |
 | Framework | Express 4 |
-| Lint | ESLint 8 |
 | Dev | nodemon |
 | Container | Docker Compose (bônus) |
 
@@ -523,5 +488,4 @@ DATABASE_URL="postgresql://USUARIO:SENHA@localhost:5432/jogos_db?schema=public"
 
 ## Licença
 
-Projeto acadêmico desenvolvido para a disciplina GCET908.#   g c e 1 9 0 8 - t r i l h a 3 - j o g o s - A P I - r e f a t o r a d a - c o m - a r q u i t e t u r a - e m - c a m a d a s  
- 
+Projeto acadêmico desenvolvido para a disciplina GCET908.
